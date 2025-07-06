@@ -1,0 +1,155 @@
+I want you to build a fully functional Arabic educational web platform called "Study Boss", designed specifically for Egyptian university students. The main theme is dark blue and gold (#0a1128 and #FFD700), with a clean, modern Arabic font like "Cairo".
+
+The goal of the platform is to help students organize their entire academic semester from day one to final exams by offering study plans, daily summaries, quizzes, and productivity tools like Pomodoro timers.
+
+🔰 Home Page Design
+Arabic, RTL layout.
+
+Must be visually impressive, simple, and animated using smooth fadeIn / fadeInUp effects.
+
+Header contains a login link to "login.html".
+
+Hero section contains two columns:
+
+Right Column: Title and intro paragraph.
+
+Left Column: A logo/image (studyboss_banner_vertical_framed.jpg) with glowing effect.
+
+CTA button: "ابدأ الآن" → leads to "plans.html".
+
+Goal box: a yellow-outlined box that says:
+
+"لأن هدفنا نكلم الطالب بلغته ونوفر احتياجاته من بيئة متكاملة ليه كطالب جامعي."
+
+Responsive for all screen sizes.
+
+🧭 Pages to include:
+index.html → Home Page (as described above).
+
+plans.html → Three subscription plans (free plan, mid-tier, premium).
+
+register.html + login.html → Firebase Authentication (Email/Password).
+
+dashboard.html → Student dashboard (based on subscribed plan).
+
+admin.html → Admin panel with full control over student progress, tasks, uploads, and plans.
+
+📊 Dashboard Features (for Students):
+Personalized greeting with the student name.
+
+Progress Bar for weekly study progress (e.g., week 3 of 16).
+
+Weeks Section:
+
+For each of 16 weeks, collapsible cards with 6 days (Sat-Thu).
+
+Each day contains:
+
+Button to download summary.
+
+Button to take daily quiz.
+
+At the end of the week: “Weekly Quiz” button.
+
+Daily Tasks Section:
+
+Students can create their own to-do list.
+
+Admin can also push official daily tasks that appear differently (read-only).
+
+When a student marks a task completed, it shows an animation and a line-through.
+
+Pomodoro Timer Section:
+
+Circular visual timer (e.g., 25:00).
+
+Work/rest time is editable.
+
+Notification alert when time ends.
+
+Matches theme (dark background, yellow circle).
+
+🔐 Admin Panel Features:
+Accessed only when the logged-in email = admin email.
+
+Interface includes:
+
+Upload summaries per day/week.
+
+Create/edit daily and weekly quizzes (stored in Firebase Firestore or Realtime DB).
+
+List all users.
+
+Search by student code.
+
+Manually assign or activate plans for students.
+
+Activate a student plan once they pay (manual confirmation).
+
+View quiz scores, tasks done, and full registration details.
+
+🔐 Registration Flow:
+Student fills in:
+
+Full Name
+
+Email
+
+Phone
+
+College
+
+Academic Year
+
+Governorate
+
+Password
+
+After successful registration:
+
+Student sees a success page with instructions:
+
+"قم بتحويل المبلغ على رقم فودافون كاش [XXXXXXX]، ثم أرسل إثبات الدفع على واتساب على نفس الرقم."
+
+User is then redirected to login page.
+
+In Firebase:
+
+The student is saved in users collection.
+
+A unique student code is generated (e.g., STB-2025-xxx).
+
+🎨 Colors & Typography:
+Primary: #0a1128 (dark navy blue)
+
+Accent: #FFD700 (gold)
+
+Text Font: Cairo (Google Fonts)
+
+Use shadows, glowing buttons, animated transitions to make the platform visually engaging.
+
+💾 Firebase Integration:
+Firebase Authentication (Email/Password)
+
+Firestore for:
+
+Users
+
+Summaries
+
+Quizzes
+
+Tasks (admin + student)
+
+Firebase Storage for PDFs/images (if needed).
+
+✅ General Notes:
+All content in Arabic RTL.
+
+Responsive mobile-first design.
+
+Modular HTML/CSS structure (e.g., external style.css and app.js).
+
+All admin updates should reflect live for the student.
+
+Students should NOT see anything related to other plans or admin conten
