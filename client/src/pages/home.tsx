@@ -169,6 +169,116 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Dashboard Preview Section */}
+      <section className="py-20 px-4 bg-gradient-to-b from-[#0a1128] to-[#1e2937]">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+              شوف شكل <span className="text-[#FFD700]">لوحة التحكم</span> بتاعتك
+            </h2>
+            <p className="text-xl text-gray-300">
+              ده مثال على الواجهة اللي هتستخدمها كل يوم في رحلتك الدراسية
+            </p>
+          </div>
+
+          {/* Dashboard Mock */}
+          <div className="bg-[#0a1128] border-2 border-[#FFD700]/30 rounded-2xl p-6 shadow-2xl">
+            {/* Mock Header */}
+            <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-600">
+              <div>
+                <h3 className="text-2xl font-bold text-white">مرحباً أحمد! 👋</h3>
+                <p className="text-gray-300">أسبوع 5 من 16 - كلية الهندسة</p>
+              </div>
+              <div className="flex gap-4">
+                <div className="bg-green-500/20 border border-green-500 rounded-lg px-4 py-2">
+                  <p className="text-green-400 text-sm">المهام المكتملة</p>
+                  <p className="text-green-300 text-xl font-bold">12/15</p>
+                </div>
+                <div className="bg-[#FFD700]/20 border border-[#FFD700] rounded-lg px-4 py-2">
+                  <p className="text-[#FFD700] text-sm">التقدم الأسبوعي</p>
+                  <p className="text-[#FFD700] text-xl font-bold">80%</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Week Progress */}
+              <div className="bg-gray-800 rounded-xl p-6">
+                <h4 className="text-[#FFD700] font-bold text-lg mb-4">الأسبوع الحالي</h4>
+                <div className="space-y-3">
+                  {[1, 2, 3, 4, 5, 6].map((day) => (
+                    <div key={day} className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                        day <= 4 ? 'bg-green-500 text-white' : day === 5 ? 'bg-[#FFD700] text-[#0a1128]' : 'bg-gray-600 text-gray-300'
+                      }`}>
+                        {day}
+                      </div>
+                      <div className="flex-1">
+                        <p className={`text-sm ${day <= 4 ? 'text-green-300' : day === 5 ? 'text-[#FFD700]' : 'text-gray-400'}`}>
+                          {day <= 4 ? '✓ مكتمل' : day === 5 ? 'جاري العمل...' : 'لم يبدأ'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Today's Tasks */}
+              <div className="bg-gray-800 rounded-xl p-6">
+                <h4 className="text-[#FFD700] font-bold text-lg mb-4">مهام اليوم</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-3 bg-green-500/10 border border-green-500 rounded-lg">
+                    <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <span className="text-green-300 line-through">مراجعة ملخص الفيزياء</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 p-3 bg-[#FFD700]/10 border border-[#FFD700] rounded-lg">
+                    <div className="w-5 h-5 bg-[#FFD700] rounded-full"></div>
+                    <span className="text-[#FFD700] font-bold">مهمة إدارية</span>
+                    <span className="text-white">حل كويز الرياضيات</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 p-3 bg-gray-700 border border-gray-600 rounded-lg">
+                    <div className="w-5 h-5 border-2 border-gray-500 rounded-full"></div>
+                    <span className="text-gray-300">مراجعة محاضرة الكيمياء</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Pomodoro Timer Mock */}
+            <div className="mt-6 bg-gray-800 rounded-xl p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-[#FFD700] font-bold text-lg">مؤقت بومودورو</h4>
+                  <p className="text-gray-300">ركز 25 دقيقة، استريح 5 دقائق</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-[#FFD700]">15:23</p>
+                    <p className="text-gray-400 text-sm">متبقي</p>
+                  </div>
+                  <button className="bg-[#FFD700] text-[#0a1128] px-6 py-2 rounded-lg font-bold">
+                    إيقاف مؤقت
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-center mt-8">
+            <Link href="/plans">
+              <Button className="bg-[#FFD700] text-[#0a1128] hover:bg-yellow-400 text-lg px-8 py-3 font-bold">
+                ابدأ رحلتك الدراسية الآن
+                <span className="mr-3">←</span>
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="bg-[#0a1128] text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

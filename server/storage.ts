@@ -1,19 +1,7 @@
-import { 
-  users, 
-  summaries, 
-  quizzes, 
-  tasks, 
-  quizResults,
-  type User, 
-  type InsertUser,
-  type Summary,
-  type InsertSummary,
-  type Quiz,
-  type InsertQuiz,
-  type Task,
-  type InsertTask,
-  type QuizResult
-} from "@shared/schema";
+import { users, summaries, quizzes, tasks, quizResults, type User, type Summary, type Quiz, type Task, type QuizResult, type InsertUser, type InsertSummary, type InsertQuiz, type InsertTask } from "@shared/schema";
+import { db } from "./db";
+import { eq, desc, and } from "drizzle-orm";
+import * as schema from "@shared/schema";
 
 export interface IStorage {
   // Users
@@ -47,189 +35,188 @@ export interface IStorage {
   getUserQuizResults(userId: number): Promise<QuizResult[]>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private summaries: Map<number, Summary>;
-  private quizzes: Map<number, Quiz>;
-  private tasks: Map<number, Task>;
-  private quizResults: Map<number, QuizResult>;
-  private currentUserId: number;
-  private currentSummaryId: number;
-  private currentQuizId: number;
-  private currentTaskId: number;
-  private currentQuizResultId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.summaries = new Map();
-    this.quizzes = new Map();
-    this.tasks = new Map();
-    this.quizResults = new Map();
-    this.currentUserId = 1;
-    this.currentSummaryId = 1;
-    this.currentQuizId = 1;
-    this.currentTaskId = 1;
-    this.currentQuizResultId = 1;
-  }
-
-  // Users
+export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(schema.users).where(eq(schema.users.id, id));
+    return user || undefined;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.email === email);
+    const [user] = await db.select().from(schema.users).where(eq(schema.users.email, email));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser & { studentCode: string }): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = {
-      ...insertUser,
-      id,
-      planType: "free",
-      isActive: false,
-      isAdmin: false,
-      createdAt: new Date(),
-    };
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(schema.users)
+      .values({
+        ...insertUser,
+        createdAt: new Date(),
+      })
+      .returning();
     return user;
   }
 
   async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
-    const user = this.users.get(id);
-    if (!user) return undefined;
-
-    const updatedUser = { ...user, ...updates };
-    this.users.set(id, updatedUser);
-    return updatedUser;
+    const [user] = await db
+      .update(schema.users)
+      .set(updates)
+      .where(eq(schema.users.id, id))
+      .returning();
+    return user || undefined;
   }
 
   async getAllUsers(): Promise<User[]> {
-    return Array.from(this.users.values());
+    return await db.select().from(schema.users).orderBy(desc(schema.users.createdAt));
   }
 
-  // Summaries
   async getSummariesByWeek(week: number): Promise<Summary[]> {
-    return Array.from(this.summaries.values()).filter(summary => summary.week === week);
+    return await db
+      .select()
+      .from(schema.summaries)
+      .where(eq(schema.summaries.week, week))
+      .orderBy(schema.summaries.day);
   }
 
   async getSummary(week: number, day: number): Promise<Summary | undefined> {
-    return Array.from(this.summaries.values()).find(
-      summary => summary.week === week && summary.day === day
-    );
+    const summaries = await db
+      .select()
+      .from(schema.summaries)
+      .where(and(eq(schema.summaries.week, week), eq(schema.summaries.day, day)));
+    return summaries[0] || undefined;
   }
 
   async createSummary(insertSummary: InsertSummary): Promise<Summary> {
-    const id = this.currentSummaryId++;
-    const summary: Summary = {
-      ...insertSummary,
-      id,
-      createdAt: new Date(),
-    };
-    this.summaries.set(id, summary);
+    const [summary] = await db
+      .insert(schema.summaries)
+      .values({
+        ...insertSummary,
+        createdAt: new Date(),
+      })
+      .returning();
     return summary;
   }
 
   async getAllSummaries(): Promise<Summary[]> {
-    return Array.from(this.summaries.values());
+    return await db
+      .select()
+      .from(schema.summaries)
+      .orderBy(desc(schema.summaries.createdAt));
   }
 
-  // Quizzes
   async getQuiz(week: number, day?: number): Promise<Quiz | undefined> {
-    return Array.from(this.quizzes.values()).find(
-      quiz => quiz.week === week && quiz.day === day
-    );
+    if (day !== undefined) {
+      const quizzes = await db
+        .select()
+        .from(schema.quizzes)
+        .where(and(eq(schema.quizzes.week, week), eq(schema.quizzes.day, day)));
+      return quizzes[0] || undefined;
+    } else {
+      const quizzes = await db
+        .select()
+        .from(schema.quizzes)
+        .where(and(eq(schema.quizzes.week, week), eq(schema.quizzes.isWeekly, true)));
+      return quizzes[0] || undefined;
+    }
   }
 
   async createQuiz(insertQuiz: InsertQuiz): Promise<Quiz> {
-    const id = this.currentQuizId++;
-    const quiz: Quiz = {
-      ...insertQuiz,
-      id,
-      createdAt: new Date(),
-    };
-    this.quizzes.set(id, quiz);
+    const [quiz] = await db
+      .insert(schema.quizzes)
+      .values({
+        ...insertQuiz,
+        createdAt: new Date(),
+      })
+      .returning();
     return quiz;
   }
 
   async getAllQuizzes(): Promise<Quiz[]> {
-    return Array.from(this.quizzes.values());
+    return await db
+      .select()
+      .from(schema.quizzes)
+      .orderBy(desc(schema.quizzes.createdAt));
   }
 
-  // Tasks
   async getUserTasks(userId: number): Promise<Task[]> {
-    return Array.from(this.tasks.values()).filter(
-      task => task.userId === userId || task.isAdminTask
-    );
+    return await db
+      .select()
+      .from(schema.tasks)
+      .where(eq(schema.tasks.userId, userId))
+      .orderBy(desc(schema.tasks.createdAt));
   }
 
   async getTask(id: number): Promise<Task | undefined> {
-    return this.tasks.get(id);
+    const [task] = await db.select().from(schema.tasks).where(eq(schema.tasks.id, id));
+    return task || undefined;
   }
 
   async createTask(insertTask: InsertTask): Promise<Task> {
-    const id = this.currentTaskId++;
-    const task: Task = {
-      ...insertTask,
-      id,
-      isCompleted: false,
-      isAdminTask: false,
-      createdAt: new Date(),
-    };
-    this.tasks.set(id, task);
+    const [task] = await db
+      .insert(schema.tasks)
+      .values({
+        ...insertTask,
+        createdAt: new Date(),
+        isCompleted: false,
+        isAdminTask: false,
+      })
+      .returning();
     return task;
   }
 
   async updateTask(id: number, updates: Partial<Task>): Promise<Task | undefined> {
-    const task = this.tasks.get(id);
-    if (!task) return undefined;
-
-    const updatedTask = { ...task, ...updates };
-    this.tasks.set(id, updatedTask);
-    return updatedTask;
+    const [task] = await db
+      .update(schema.tasks)
+      .set(updates)
+      .where(eq(schema.tasks.id, id))
+      .returning();
+    return task || undefined;
   }
 
   async deleteTask(id: number): Promise<boolean> {
-    return this.tasks.delete(id);
+    const result = await db.delete(schema.tasks).where(eq(schema.tasks.id, id));
+    return result.rowCount! > 0;
   }
 
   async createAdminTask(taskData: Omit<InsertTask, 'userId'>): Promise<Task[]> {
-    const allUsers = Array.from(this.users.values());
-    const createdTasks: Task[] = [];
-
-    // Create the task for all users
-    for (const user of allUsers) {
-      const id = this.currentTaskId++;
-      const task: Task = {
-        ...taskData,
-        id,
-        userId: user.id,
-        isCompleted: false,
-        isAdminTask: true,
-        createdAt: new Date(),
-      };
-      this.tasks.set(id, task);
-      createdTasks.push(task);
+    const users = await this.getAllUsers();
+    const tasks: Task[] = [];
+    
+    for (const user of users) {
+      const [task] = await db
+        .insert(schema.tasks)
+        .values({
+          ...taskData,
+          userId: user.id,
+          createdAt: new Date(),
+          isCompleted: false,
+          isAdminTask: true,
+        })
+        .returning();
+      tasks.push(task);
     }
-
-    return createdTasks;
+    
+    return tasks;
   }
 
-  // Quiz Results
   async saveQuizResult(result: { userId: number; quizId: number; score: number; answers: any }): Promise<QuizResult> {
-    const id = this.currentQuizResultId++;
-    const quizResult: QuizResult = {
-      ...result,
-      id,
-      completedAt: new Date(),
-    };
-    this.quizResults.set(id, quizResult);
+    const [quizResult] = await db
+      .insert(schema.quizResults)
+      .values({
+        ...result,
+        completedAt: new Date(),
+      })
+      .returning();
     return quizResult;
   }
 
   async getUserQuizResults(userId: number): Promise<QuizResult[]> {
-    return Array.from(this.quizResults.values()).filter(result => result.userId === userId);
+    return await db
+      .select()
+      .from(schema.quizResults)
+      .where(eq(schema.quizResults.userId, userId))
+      .orderBy(desc(schema.quizResults.completedAt));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

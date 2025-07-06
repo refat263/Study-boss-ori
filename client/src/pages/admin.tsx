@@ -1,244 +1,204 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PlusCircle, Search, Users, FileText, Brain, Upload, CheckCircle, XCircle } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { type User } from "@shared/schema";
 import Navbar from "@/components/layout/navbar";
 import { useAuth } from "@/hooks/use-auth";
-import { User } from "@shared/schema";
-import { Search, Upload, Users, BookOpen, CheckCircle } from "lucide-react";
 
 export default function Admin() {
   const { user } = useAuth();
-  const { toast } = useToast();
+  const [searchEmail, setSearchEmail] = useState("");
   const queryClient = useQueryClient();
-  
-  const [searchQuery, setSearchQuery] = useState("");
-  const [newSummary, setNewSummary] = useState({
-    week: 1,
-    day: 1,
-    title: "",
-    content: "",
-  });
-  const [newTask, setNewTask] = useState({
-    title: "",
-    description: "",
-  });
-
-  // Check if user is admin (this should be properly validated on backend)
-  const isAdmin = user?.email === "admin@studyboss.com"; // This is a simple check for demo
 
   // Fetch all users
-  const { data: users = [], isLoading: usersLoading } = useQuery({
+  const { data: users = [], isLoading } = useQuery({
     queryKey: ["/api/admin/users"],
-    enabled: isAdmin,
   });
 
-  // Fetch summaries
+  // Fetch all summaries
   const { data: summaries = [] } = useQuery({
     queryKey: ["/api/admin/summaries"],
-    enabled: isAdmin,
   });
 
-  // Add summary mutation
-  const addSummaryMutation = useMutation({
-    mutationFn: (summaryData: typeof newSummary) =>
-      apiRequest("POST", "/api/admin/summaries", summaryData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/summaries"] });
-      setNewSummary({ week: 1, day: 1, title: "", content: "" });
-      toast({
-        title: "تم إضافة الملخص",
-        description: "تم رفع الملخص بنجاح",
+  // Fetch all quizzes
+  const { data: quizzes = [] } = useQuery({
+    queryKey: ["/api/admin/quizzes"],
+  });
+
+  // Create admin task mutation
+  const createAdminTaskMutation = useMutation({
+    mutationFn: async (taskData: { title: string; description?: string }) => {
+      return await apiRequest("/api/admin/tasks", {
+        method: "POST",
+        body: JSON.stringify(taskData),
       });
+    },
+    onSuccess: () => {
+      toast({ title: "تم إنشاء المهمة بنجاح وإرسالها لجميع الطلاب" });
+    },
+    onError: () => {
+      toast({ title: "حدث خطأ في إنشاء المهمة", variant: "destructive" });
     },
   });
 
-  // Add admin task mutation
-  const addAdminTaskMutation = useMutation({
-    mutationFn: (taskData: typeof newTask) =>
-      apiRequest("POST", "/api/admin/tasks", { ...taskData, isAdminTask: true }),
-    onSuccess: () => {
-      setNewTask({ title: "", description: "" });
-      toast({
-        title: "تم إضافة المهمة",
-        description: "تم إضافة المهمة الإدارية لجميع الطلاب",
+  // Update user plan mutation
+  const updateUserPlanMutation = useMutation({
+    mutationFn: async ({ userId, isActive }: { userId: number; isActive: boolean }) => {
+      return await apiRequest(`/api/admin/users/${userId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ isActive }),
       });
     },
-  });
-
-  // Activate user plan mutation
-  const activateUserMutation = useMutation({
-    mutationFn: ({ userId, planType }: { userId: number; planType: string }) =>
-      apiRequest("PATCH", `/api/admin/users/${userId}/activate`, { planType }),
     onSuccess: () => {
+      toast({ title: "تم تحديث حالة الطالب بنجاح" });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
-      toast({
-        title: "تم تفعيل الحساب",
-        description: "تم تفعيل حساب الطالب بنجاح",
-      });
+    },
+    onError: () => {
+      toast({ title: "حدث خطأ في تحديث حالة الطالب", variant: "destructive" });
     },
   });
 
-  const handleAddSummary = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newSummary.title && newSummary.content) {
-      addSummaryMutation.mutate(newSummary);
-    }
-  };
+  // Create summary mutation
+  const createSummaryMutation = useMutation({
+    mutationFn: async (summaryData: { title: string; content: string; week: number; day: number; fileUrl?: string }) => {
+      return await apiRequest("/api/admin/summaries", {
+        method: "POST",
+        body: JSON.stringify(summaryData),
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "تم إنشاء الملخص بنجاح" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/summaries"] });
+    },
+    onError: () => {
+      toast({ title: "حدث خطأ في إنشاء الملخص", variant: "destructive" });
+    },
+  });
 
-  const handleAddAdminTask = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newTask.title) {
-      addAdminTaskMutation.mutate(newTask);
-    }
-  };
+  // Create quiz mutation
+  const createQuizMutation = useMutation({
+    mutationFn: async (quizData: { title: string; week: number; day?: number; questions: any; isWeekly: boolean }) => {
+      return await apiRequest("/api/admin/quizzes", {
+        method: "POST",
+        body: JSON.stringify(quizData),
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "تم إنشاء الكويز بنجاح" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/quizzes"] });
+    },
+    onError: () => {
+      toast({ title: "حدث خطأ في إنشاء الكويز", variant: "destructive" });
+    },
+  });
 
   const filteredUsers = users.filter((user: User) =>
-    user.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.studentCode?.toLowerCase().includes(searchQuery.toLowerCase())
+    user.email.toLowerCase().includes(searchEmail.toLowerCase())
   );
 
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="flex items-center justify-center py-20">
-          <Card className="w-full max-w-md">
-            <CardContent className="pt-6 text-center">
-              <h2 className="text-2xl font-bold text-red-600 mb-4">
-                غير مصرح لك بالوصول
-              </h2>
-              <p className="text-gray-600">
-                هذه الصفحة مخصصة للمشرفين فقط
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
+  if (!user) {
+    return <div>يجب تسجيل الدخول أولاً</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#0a1128] text-white">
       <Navbar />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#0a1128] mb-2">
-            لوحة تحكم المشرف 👨‍💼
-          </h1>
-          <p className="text-gray-600">
-            إدارة المحتوى والطلاب والمهام
-          </p>
-        </div>
-
-        {/* Admin Tabs */}
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-8 text-[#FFD700]">لوحة تحكم الإدمن</h1>
+        
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
+          <TabsList className="grid w-full grid-cols-4 bg-gray-800">
+            <TabsTrigger value="users">
+              <Users className="mr-2 h-4 w-4" />
               الطلاب
             </TabsTrigger>
-            <TabsTrigger value="summaries" className="flex items-center gap-2">
-              <Upload className="w-4 h-4" />
-              الملخصات
+            <TabsTrigger value="content">
+              <FileText className="mr-2 h-4 w-4" />
+              المحتوى
             </TabsTrigger>
-            <TabsTrigger value="tasks" className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4" />
+            <TabsTrigger value="quizzes">
+              <Brain className="mr-2 h-4 w-4" />
+              الكويزات
+            </TabsTrigger>
+            <TabsTrigger value="tasks">
+              <PlusCircle className="mr-2 h-4 w-4" />
               المهام
-            </TabsTrigger>
-            <TabsTrigger value="quizzes" className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4" />
-              الاختبارات
             </TabsTrigger>
           </TabsList>
 
-          {/* Users Management */}
+          {/* Students Tab */}
           <TabsContent value="users">
-            <Card>
+            <Card className="bg-gray-800 border-gray-700">
               <CardHeader>
-                <CardTitle className="text-xl text-[#0a1128]">
-                  إدارة الطلاب
-                </CardTitle>
+                <CardTitle className="text-[#FFD700]">إدارة الطلاب ({users.length} طالب)</CardTitle>
                 <div className="flex gap-4">
                   <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
-                      placeholder="البحث بالاسم أو البريد أو كود الطالب..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10"
+                      placeholder="البحث بالإيميل..."
+                      value={searchEmail}
+                      onChange={(e) => setSearchEmail(e.target.value)}
+                      className="pl-10 bg-gray-700 border-gray-600"
                     />
                   </div>
                 </div>
               </CardHeader>
-              
               <CardContent>
-                {usersLoading ? (
-                  <div className="text-center py-8">جاري تحميل الطلاب...</div>
-                ) : filteredUsers.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    لا يوجد طلاب
-                  </div>
+                {isLoading ? (
+                  <div>جاري التحميل...</div>
                 ) : (
                   <div className="space-y-4">
                     {filteredUsers.map((student: User) => (
-                      <div
-                        key={student.id}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:border-[#FFD700] transition-colors"
-                      >
+                      <div key={student.id} className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
                         <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="font-medium text-[#0a1128]">
-                              {student.fullName}
-                            </h3>
-                            <Badge
-                              variant={student.isActive ? "default" : "secondary"}
-                              className={student.isActive ? "bg-green-500" : ""}
-                            >
-                              {student.isActive ? "نشط" : "غير نشط"}
-                            </Badge>
-                            <Badge variant="outline">
-                              {student.planType || "مجاني"}
-                            </Badge>
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-semibold">{student.fullName}</h3>
+                            {student.isActive ? (
+                              <CheckCircle className="h-5 w-5 text-green-500" />
+                            ) : (
+                              <XCircle className="h-5 w-5 text-red-500" />
+                            )}
                           </div>
-                          
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-gray-600">
-                            <span>📧 {student.email}</span>
-                            <span>📱 {student.phone}</span>
-                            <span>🏫 {student.college}</span>
-                            <span>🆔 {student.studentCode}</span>
+                          <p className="text-gray-300">{student.email}</p>
+                          <p className="text-sm text-gray-400">{student.studentCode}</p>
+                          <div className="flex gap-4 mt-1">
+                            <p className="text-sm">الكلية: {student.college}</p>
+                            <p className="text-sm">السنة: {student.academicYear}</p>
+                            <p className="text-sm">المحافظة: {student.governorate}</p>
                           </div>
                         </div>
-                        
-                        <div className="flex gap-2">
-                          <Select
-                            onValueChange={(planType) =>
-                              activateUserMutation.mutate({
-                                userId: student.id,
-                                planType,
-                              })
-                            }
+                        <div className="text-right">
+                          <Badge 
+                            variant={student.subscriptionPlan === 'free' ? 'secondary' : 'default'} 
+                            className="mb-2"
                           >
-                            <SelectTrigger className="w-32">
-                              <SelectValue placeholder="تفعيل" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="free">مجاني</SelectItem>
-                              <SelectItem value="premium">متقدم</SelectItem>
-                              <SelectItem value="vip">VIP</SelectItem>
-                            </SelectContent>
-                          </Select>
+                            {student.subscriptionPlan === 'free' ? 'مجاني' : 
+                             student.subscriptionPlan === 'premium' ? 'بريميوم' : 'VIP'}
+                          </Badge>
+                          <div className="space-y-1">
+                            <Button 
+                              size="sm" 
+                              variant={student.isActive ? "destructive" : "default"}
+                              onClick={() => updateUserPlanMutation.mutate({
+                                userId: student.id,
+                                isActive: !student.isActive
+                              })}
+                              disabled={updateUserPlanMutation.isPending}
+                            >
+                              {student.isActive ? "إلغاء التفعيل" : "تفعيل الخطة"}
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -248,31 +208,57 @@ export default function Admin() {
             </Card>
           </TabsContent>
 
-          {/* Summaries Management */}
-          <TabsContent value="summaries">
-            <div className="grid lg:grid-cols-2 gap-6">
-              
-              {/* Add Summary Form */}
-              <Card>
+          {/* Content Tab */}
+          <TabsContent value="content">
+            <div className="grid gap-6">
+              {/* Upload Summary Form */}
+              <Card className="bg-gray-800 border-gray-700">
                 <CardHeader>
-                  <CardTitle className="text-xl text-[#0a1128]">
-                    إضافة ملخص جديد
-                  </CardTitle>
+                  <CardTitle className="text-[#FFD700]">رفع ملخص جديد</CardTitle>
                 </CardHeader>
-                
                 <CardContent>
-                  <form onSubmit={handleAddSummary} className="space-y-4">
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const formData = new FormData(e.currentTarget);
+                      createSummaryMutation.mutate({
+                        title: formData.get("title") as string,
+                        content: formData.get("content") as string,
+                        week: parseInt(formData.get("week") as string),
+                        day: parseInt(formData.get("day") as string),
+                        fileUrl: formData.get("fileUrl") as string || undefined,
+                      });
+                      e.currentTarget.reset();
+                    }}
+                    className="space-y-4"
+                  >
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label>الأسبوع</Label>
-                        <Select
-                          value={newSummary.week.toString()}
-                          onValueChange={(value) =>
-                            setNewSummary(prev => ({ ...prev, week: parseInt(value) }))
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
+                        <Label htmlFor="title">عنوان الملخص</Label>
+                        <Input
+                          id="title"
+                          name="title"
+                          placeholder="عنوان الملخص..."
+                          required
+                          className="bg-gray-700 border-gray-600"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="fileUrl">رابط الملف (اختياري)</Label>
+                        <Input
+                          id="fileUrl"
+                          name="fileUrl"
+                          placeholder="https://example.com/file.pdf"
+                          className="bg-gray-700 border-gray-600"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="week">الأسبوع</Label>
+                        <Select name="week" required>
+                          <SelectTrigger className="bg-gray-700 border-gray-600">
+                            <SelectValue placeholder="اختر الأسبوع" />
                           </SelectTrigger>
                           <SelectContent>
                             {Array.from({ length: 16 }, (_, i) => (
@@ -283,29 +269,162 @@ export default function Admin() {
                           </SelectContent>
                         </Select>
                       </div>
-                      
                       <div>
-                        <Label>اليوم</Label>
-                        <Select
-                          value={newSummary.day.toString()}
-                          onValueChange={(value) =>
-                            setNewSummary(prev => ({ ...prev, day: parseInt(value) }))
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
+                        <Label htmlFor="day">اليوم</Label>
+                        <Select name="day" required>
+                          <SelectTrigger className="bg-gray-700 border-gray-600">
+                            <SelectValue placeholder="اختر اليوم" />
                           </SelectTrigger>
                           <SelectContent>
-                            {[
-                              "السبت",
-                              "الأحد",
-                              "الاثنين",
-                              "الثلاثاء",
-                              "الأربعاء",
-                              "الخميس",
-                            ].map((day, index) => (
-                              <SelectItem key={index + 1} value={(index + 1).toString()}>
-                                {day}
+                            {Array.from({ length: 6 }, (_, i) => (
+                              <SelectItem key={i + 1} value={(i + 1).toString()}>
+                                اليوم {i + 1}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="content">محتوى الملخص</Label>
+                      <Textarea
+                        id="content"
+                        name="content"
+                        placeholder="محتوى الملخص..."
+                        required
+                        className="bg-gray-700 border-gray-600"
+                        rows={6}
+                      />
+                    </div>
+                    <Button type="submit" disabled={createSummaryMutation.isPending}>
+                      <Upload className="mr-2 h-4 w-4" />
+                      {createSummaryMutation.isPending ? "جاري الرفع..." : "رفع الملخص"}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+
+              {/* Existing Summaries */}
+              <Card className="bg-gray-800 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-[#FFD700]">الملخصات الموجودة ({summaries.length})</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {summaries.map((summary: any) => (
+                      <div key={summary.id} className="p-4 bg-gray-700 rounded-lg">
+                        <h3 className="font-semibold">{summary.title}</h3>
+                        <p className="text-gray-300">الأسبوع {summary.week} - اليوم {summary.day}</p>
+                        {summary.fileUrl && (
+                          <a 
+                            href={summary.fileUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-[#FFD700] text-sm underline"
+                          >
+                            رابط الملف
+                          </a>
+                        )}
+                        <div className="mt-2 flex gap-2">
+                          <Button size="sm" variant="outline">تعديل</Button>
+                          <Button size="sm" variant="destructive">حذف</Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Quizzes Tab */}
+          <TabsContent value="quizzes">
+            <div className="grid gap-6">
+              {/* Create Quiz Form */}
+              <Card className="bg-gray-800 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-[#FFD700]">إنشاء كويز جديد</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const formData = new FormData(e.currentTarget);
+                      const isWeekly = formData.get("isWeekly") === "true";
+                      
+                      // Simple question format
+                      const questions = [
+                        {
+                          question: formData.get("question1") as string,
+                          options: [
+                            formData.get("q1_option1") as string,
+                            formData.get("q1_option2") as string,
+                            formData.get("q1_option3") as string,
+                            formData.get("q1_option4") as string,
+                          ],
+                          correct: parseInt(formData.get("q1_correct") as string),
+                        }
+                      ];
+
+                      createQuizMutation.mutate({
+                        title: formData.get("title") as string,
+                        week: parseInt(formData.get("week") as string),
+                        day: isWeekly ? undefined : parseInt(formData.get("day") as string),
+                        isWeekly,
+                        questions,
+                      });
+                      e.currentTarget.reset();
+                    }}
+                    className="space-y-4"
+                  >
+                    <div>
+                      <Label htmlFor="title">عنوان الكويز</Label>
+                      <Input
+                        id="title"
+                        name="title"
+                        placeholder="عنوان الكويز..."
+                        required
+                        className="bg-gray-700 border-gray-600"
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="week">الأسبوع</Label>
+                        <Select name="week" required>
+                          <SelectTrigger className="bg-gray-700 border-gray-600">
+                            <SelectValue placeholder="اختر الأسبوع" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 16 }, (_, i) => (
+                              <SelectItem key={i + 1} value={(i + 1).toString()}>
+                                الأسبوع {i + 1}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="isWeekly">نوع الكويز</Label>
+                        <Select name="isWeekly" required>
+                          <SelectTrigger className="bg-gray-700 border-gray-600">
+                            <SelectValue placeholder="اختر النوع" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="false">كويز يومي</SelectItem>
+                            <SelectItem value="true">كويز أسبوعي</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="day">اليوم (للكويز اليومي)</Label>
+                        <Select name="day">
+                          <SelectTrigger className="bg-gray-700 border-gray-600">
+                            <SelectValue placeholder="اختر اليوم" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 6 }, (_, i) => (
+                              <SelectItem key={i + 1} value={(i + 1).toString()}>
+                                اليوم {i + 1}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -313,150 +432,156 @@ export default function Admin() {
                       </div>
                     </div>
                     
-                    <div>
-                      <Label>عنوان الملخص</Label>
-                      <Input
-                        value={newSummary.title}
-                        onChange={(e) =>
-                          setNewSummary(prev => ({ ...prev, title: e.target.value }))
-                        }
-                        placeholder="أدخل عنوان الملخص"
-                        required
-                      />
+                    {/* Simple question form */}
+                    <div className="space-y-4 border-t border-gray-600 pt-4">
+                      <h4 className="font-semibold text-[#FFD700]">السؤال الأول</h4>
+                      <div>
+                        <Label htmlFor="question1">نص السؤال</Label>
+                        <Input
+                          id="question1"
+                          name="question1"
+                          placeholder="اكتب السؤال هنا..."
+                          required
+                          className="bg-gray-700 border-gray-600"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="q1_option1">الخيار الأول</Label>
+                          <Input
+                            id="q1_option1"
+                            name="q1_option1"
+                            placeholder="الخيار الأول"
+                            required
+                            className="bg-gray-700 border-gray-600"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="q1_option2">الخيار الثاني</Label>
+                          <Input
+                            id="q1_option2"
+                            name="q1_option2"
+                            placeholder="الخيار الثاني"
+                            required
+                            className="bg-gray-700 border-gray-600"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="q1_option3">الخيار الثالث</Label>
+                          <Input
+                            id="q1_option3"
+                            name="q1_option3"
+                            placeholder="الخيار الثالث"
+                            required
+                            className="bg-gray-700 border-gray-600"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="q1_option4">الخيار الرابع</Label>
+                          <Input
+                            id="q1_option4"
+                            name="q1_option4"
+                            placeholder="الخيار الرابع"
+                            required
+                            className="bg-gray-700 border-gray-600"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="q1_correct">الإجابة الصحيحة</Label>
+                        <Select name="q1_correct" required>
+                          <SelectTrigger className="bg-gray-700 border-gray-600">
+                            <SelectValue placeholder="اختر الإجابة الصحيحة" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0">الخيار الأول</SelectItem>
+                            <SelectItem value="1">الخيار الثاني</SelectItem>
+                            <SelectItem value="2">الخيار الثالث</SelectItem>
+                            <SelectItem value="3">الخيار الرابع</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    
-                    <div>
-                      <Label>محتوى الملخص</Label>
-                      <Textarea
-                        value={newSummary.content}
-                        onChange={(e) =>
-                          setNewSummary(prev => ({ ...prev, content: e.target.value }))
-                        }
-                        placeholder="أدخل محتوى الملخص"
-                        rows={6}
-                        required
-                      />
-                    </div>
-                    
-                    <Button
-                      type="submit"
-                      disabled={addSummaryMutation.isPending}
-                      className="w-full bg-[#0a1128] hover:bg-opacity-90"
-                    >
-                      {addSummaryMutation.isPending ? "جاري الإضافة..." : "إضافة الملخص"}
+
+                    <Button type="submit" disabled={createQuizMutation.isPending}>
+                      <Brain className="mr-2 h-4 w-4" />
+                      {createQuizMutation.isPending ? "جاري الإنشاء..." : "إنشاء الكويز"}
                     </Button>
                   </form>
                 </CardContent>
               </Card>
 
-              {/* Summaries List */}
-              <Card>
+              {/* Existing Quizzes */}
+              <Card className="bg-gray-800 border-gray-700">
                 <CardHeader>
-                  <CardTitle className="text-xl text-[#0a1128]">
-                    الملخصات المرفوعة
-                  </CardTitle>
+                  <CardTitle className="text-[#FFD700]">الكويزات الموجودة ({quizzes.length})</CardTitle>
                 </CardHeader>
-                
                 <CardContent>
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {summaries.length === 0 ? (
-                      <div className="text-center text-gray-500 py-4">
-                        لا توجد ملخصات حالياً
-                      </div>
-                    ) : (
-                      summaries.map((summary: any) => (
-                        <div
-                          key={summary.id}
-                          className="p-3 border rounded-lg hover:border-[#FFD700] transition-colors"
-                        >
-                          <div className="flex justify-between items-start mb-2">
-                            <h4 className="font-medium text-[#0a1128]">
-                              {summary.title}
-                            </h4>
-                            <Badge variant="outline">
-                              أسبوع {summary.week} - يوم {summary.day}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-gray-600 line-clamp-2">
-                            {summary.content}
-                          </p>
+                  <div className="space-y-4">
+                    {quizzes.map((quiz: any) => (
+                      <div key={quiz.id} className="p-4 bg-gray-700 rounded-lg">
+                        <h3 className="font-semibold">{quiz.title}</h3>
+                        <p className="text-gray-300">
+                          الأسبوع {quiz.week}
+                          {quiz.day ? ` - اليوم ${quiz.day}` : " - كويز أسبوعي"}
+                        </p>
+                        <div className="mt-2 flex gap-2">
+                          <Button size="sm" variant="outline">تعديل</Button>
+                          <Button size="sm" variant="destructive">حذف</Button>
                         </div>
-                      ))
-                    )}
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
 
-          {/* Tasks Management */}
+          {/* Tasks Tab */}
           <TabsContent value="tasks">
-            <Card>
+            <Card className="bg-gray-800 border-gray-700">
               <CardHeader>
-                <CardTitle className="text-xl text-[#0a1128]">
-                  إضافة مهمة إدارية
-                </CardTitle>
-                <p className="text-gray-600">
-                  المهام الإدارية تظهر لجميع الطلاب ولا يمكنهم حذفها
-                </p>
+                <CardTitle className="text-[#FFD700]">إدارة المهام العامة</CardTitle>
+                <p className="text-gray-300">المهام التي تضيفها هنا سيتم إرسالها تلقائياً لجميع الطلاب</p>
               </CardHeader>
-              
               <CardContent>
-                <form onSubmit={handleAddAdminTask} className="space-y-4">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.currentTarget);
+                    createAdminTaskMutation.mutate({
+                      title: formData.get("title") as string,
+                      description: formData.get("description") as string,
+                    });
+                    e.currentTarget.reset();
+                  }}
+                  className="space-y-4 mb-6"
+                >
                   <div>
-                    <Label>عنوان المهمة</Label>
+                    <Label htmlFor="title">عنوان المهمة</Label>
                     <Input
-                      value={newTask.title}
-                      onChange={(e) =>
-                        setNewTask(prev => ({ ...prev, title: e.target.value }))
-                      }
-                      placeholder="أدخل عنوان المهمة"
+                      id="title"
+                      name="title"
+                      placeholder="عنوان المهمة..."
                       required
+                      className="bg-gray-700 border-gray-600"
                     />
                   </div>
-                  
                   <div>
-                    <Label>وصف المهمة (اختياري)</Label>
+                    <Label htmlFor="description">وصف المهمة</Label>
                     <Textarea
-                      value={newTask.description}
-                      onChange={(e) =>
-                        setNewTask(prev => ({ ...prev, description: e.target.value }))
-                      }
-                      placeholder="أدخل تفاصيل المهمة"
+                      id="description"
+                      name="description"
+                      placeholder="وصف المهمة (اختياري)..."
+                      className="bg-gray-700 border-gray-600"
                       rows={3}
                     />
                   </div>
-                  
-                  <Button
-                    type="submit"
-                    disabled={addAdminTaskMutation.isPending}
-                    className="bg-[#FFD700] text-[#0a1128] hover:bg-yellow-400"
-                  >
-                    {addAdminTaskMutation.isPending ? "جاري الإضافة..." : "إضافة مهمة إدارية"}
+                  <Button type="submit" disabled={createAdminTaskMutation.isPending}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    {createAdminTaskMutation.isPending ? "جاري الإرسال..." : "إرسال المهمة لجميع الطلاب"}
                   </Button>
                 </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Quizzes Management */}
-          <TabsContent value="quizzes">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-xl text-[#0a1128]">
-                  إدارة الاختبارات
-                </CardTitle>
-                <p className="text-gray-600">
-                  قريباً - إضافة وإدارة الاختبارات اليومية والأسبوعية
-                </p>
-              </CardHeader>
-              
-              <CardContent>
-                <div className="text-center py-12 text-gray-500">
-                  <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                  <h3 className="text-lg font-medium mb-2">قيد التطوير</h3>
-                  <p>سيتم إضافة نظام إدارة الاختبارات قريباً</p>
-                </div>
               </CardContent>
             </Card>
           </TabsContent>

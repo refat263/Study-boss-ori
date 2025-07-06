@@ -118,7 +118,12 @@ Study Boss is a fully functional Arabic educational web platform designed specif
 - Database migrations managed via `drizzle-kit`
 
 ## Changelog
-- July 06, 2025. Initial setup
+- July 06, 2025: Initial setup
+- July 06, 2025: Database integration implemented with PostgreSQL
+- July 06, 2025: Admin panel enhanced with comprehensive features
+- July 06, 2025: Free plan removed, replaced with Basic (99 EGP) plan
+- July 06, 2025: Dashboard preview added to homepage
+- July 06, 2025: Admin tasks styling differentiated from student tasks
 
 ## User Preferences
 
