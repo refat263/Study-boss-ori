@@ -1,0 +1,151 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(220, 79%, 10%);
+  --muted: hsl(210, 40%, 96%);
+  --muted-foreground: hsl(215, 16%, 47%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(220, 79%, 10%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(220, 79%, 10%);
+  --border: hsl(214, 32%, 91%);
+  --input: hsl(214, 32%, 91%);
+  --primary: hsl(220, 79%, 10%);
+  --primary-foreground: hsl(0, 0%, 98%);
+  --secondary: hsl(210, 40%, 96%);
+  --secondary-foreground: hsl(215, 25%, 27%);
+  --accent: hsl(51, 100%, 50%);
+  --accent-foreground: hsl(220, 79%, 10%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(220, 79%, 10%);
+  --radius: 0.5rem;
+  
+  /* Custom Study Boss colors */
+  --study-primary: hsl(220, 79%, 10%);
+  --study-accent: hsl(51, 100%, 50%);
+  --study-dark: hsl(215, 28%, 17%);
+  --study-light-gold: hsl(48, 89%, 85%);
+}
+
+.dark {
+  --background: hsl(220, 79%, 10%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(215, 28%, 17%);
+  --muted-foreground: hsl(217, 10%, 64%);
+  --popover: hsl(220, 79%, 10%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(220, 79%, 10%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(215, 28%, 17%);
+  --input: hsl(215, 28%, 17%);
+  --primary: hsl(51, 100%, 50%);
+  --primary-foreground: hsl(220, 79%, 10%);
+  --secondary: hsl(215, 28%, 17%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(51, 100%, 50%);
+  --accent-foreground: hsl(220, 79%, 10%);
+  --destructive: hsl(0, 62%, 30%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(212, 12%, 84%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    direction: rtl;
+  }
+
+  body {
+    @apply font-cairo antialiased bg-background text-foreground;
+    font-family: 'Cairo', sans-serif;
+  }
+}
+
+@layer utilities {
+  .font-cairo {
+    font-family: 'Cairo', sans-serif;
+  }
+  
+  .text-glow {
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  }
+  
+  .glow-effect {
+    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
+  }
+  
+  .btn-glow {
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+    transition: all 0.3s ease;
+  }
+  
+  .btn-glow:hover {
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.5);
+    transform: translateY(-2px);
+  }
+  
+  .hero-bg {
+    background: linear-gradient(135deg, #0a1128 0%, #1e293b 50%, #0f172a 100%);
+  }
+  
+  .card-hover {
+    transition: all 0.3s ease;
+  }
+  
+  .card-hover:hover {
+    transform: translateY(-5px);
+  }
+  
+  .animate-fadeIn {
+    animation: fadeIn 0.6s ease-in-out;
+  }
+  
+  .animate-fadeInUp {
+    animation: fadeInUp 0.8s ease-out;
+  }
+  
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+  
+  .animate-pulse-gold {
+    animation: pulse-gold 2s ease-in-out infinite;
+  }
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  0% { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes glow {
+  0% { box-shadow: 0 0 5px #FFD700, 0 0 10px #FFD700, 0 0 15px #FFD700; }
+  100% { box-shadow: 0 0 10px #FFD700, 0 0 20px #FFD700, 0 0 30px #FFD700; }
+}
+
+@keyframes pulse-gold {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+/* RTL specific adjustments */
+[dir="rtl"] .space-x-reverse > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 1;
+}
+
+[dir="rtl"] .divide-x-reverse > :not([hidden]) ~ :not([hidden]) {
+  --tw-divide-x-reverse: 1;
+}
